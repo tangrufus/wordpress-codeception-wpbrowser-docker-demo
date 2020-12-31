@@ -46,8 +46,10 @@ services:
     environment:
       - FASTCGI_HOST=wordpress
     volumes:
-      - wordpress:/var/www/html:ro
       - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./:/var/www/html/wp-content/plugins/${APP}:cached
+      - /var/www/html/wp-content/plugins/${APP}/.git
+      - wordpress:/var/www/html
     networks:
       - workspace
 
@@ -99,8 +101,10 @@ services:
     environment:
       - FASTCGI_HOST=wordpress-test
     volumes:
-      - wordpress-source:/var/www/html:ro
       - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./:/var/www/html/wp-content/plugins/${APP}:cached
+      - /var/www/html/wp-content/plugins/${APP}/.git
+      - wordpress-source:/var/www/html
     networks:
       - test
 
@@ -116,6 +120,8 @@ services:
     environment:
       <<: *x-database-environment
       MYSQL_HOST: database-test
+      SELENIUM_HOST: chrome
+      SELENIUM_BROWSER: chrome
       TEST_SITE_WP_URL: http://web-test
       APP: ${APP}
       WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
@@ -125,7 +131,6 @@ services:
       TEST_SITE_WP_ADMIN_PATH: ${TEST_SITE_WP_ADMIN_PATH}
       TEST_SITE_ADMIN_USERNAME: ${TEST_SITE_ADMIN_USERNAME}
       TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
-      SELENIUM_HOST: chrome
     working_dir: /var/www/html/wp-content/plugins/${APP}
     volumes:
       - ./:/var/www/html/wp-content/plugins/${APP}:cached
