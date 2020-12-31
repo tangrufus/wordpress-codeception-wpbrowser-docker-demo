@@ -18,4 +18,4 @@ extensions:
         - Codeception\Command\GenerateWPCanonical
         - Codeception\Command\GenerateWPXMLRPC
 params:
-    - .env.testing
+    - env
