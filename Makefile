@@ -13,6 +13,9 @@ endif
 dc:
 	${DOCKER_COMPOSE} $(DC_ARGS)
 
+stop:
+	${DOCKER_COMPOSE} stop
+
 down:
 	${DOCKER_COMPOSE} down
 
