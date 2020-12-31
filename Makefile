@@ -27,3 +27,6 @@ wp-cli:
 
 %-test:
 	${DOCKER_COMPOSE} run --rm test $*
+
+db-dump:
+	${DOCKER_COMPOSE} run --rm wp-cli wp db export tests/_data/dump.sql
