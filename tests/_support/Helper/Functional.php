@@ -1,5 +1,5 @@
 <?php
-namespace DummyDummy\Helper;
+namespace Dummy\Dummy\Helper;
 
 // here you can define custom actions
 // all public methods declared in helper class will be available in $I

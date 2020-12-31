@@ -10,7 +10,7 @@ modules:
         - WPBrowser
         # - WPFilesystem
         - Asserts
-        - \DummyDummy\Helper\Functional
+        - \Dummy\Dummy\Helper\Functional
     config:
         WPDb:
             dsn: '%TEST_SITE_DB_DSN%'

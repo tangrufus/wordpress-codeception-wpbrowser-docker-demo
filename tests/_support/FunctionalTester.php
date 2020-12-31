@@ -1,5 +1,5 @@
 <?php
-namespace DummyDummy;
+namespace Dummy\Dummy;
 
 /**
  * Inherited Methods

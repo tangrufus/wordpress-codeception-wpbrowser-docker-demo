@@ -1,4 +1,4 @@
-namespace: DummyDummy
+namespace: Dummy\Dummy
 paths:
     tests: tests
     output: tests/_output

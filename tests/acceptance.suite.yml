@@ -10,7 +10,7 @@ modules:
     enabled:
         - WPDb
         - WPBrowser
-        - \DummyDummy\Helper\Acceptance
+        - \Dummy\Dummy\Helper\Acceptance
     config:
         WPDb:
             dsn: '%TEST_SITE_DB_DSN%'
