@@ -43,9 +43,11 @@ services:
     restart: unless-stopped
     ports:
       - "${WEB_PUBLISHED_PORT}:80"
+    environment:
+      - FASTCGI_HOST=wordpress
     volumes:
-      - wordpress:/var/www/html
-      - ./.docker/nginx.conf:/etc/nginx/conf.d/default.conf
+      - wordpress:/var/www/html:ro
+      - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     networks:
       - workspace
 
@@ -88,20 +90,36 @@ services:
     networks:
       - test
 
+  web-test:
+    depends_on:
+      - database-test
+      - wordpress-test
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    environment:
+      - FASTCGI_HOST=wordpress-test
+    volumes:
+      - wordpress-source:/var/www/html:ro
+      - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks:
+      - test
+
   test:
     image: cimg/php:${PHP_VERSION}
     entrypoint: vendor/bin/codecept run
     restart: "no"
     depends_on:
+      - web-test
       - wordpress-test
       - database-test
       - chrome
     environment:
       <<: *x-database-environment
       MYSQL_HOST: database-test
+      TEST_SITE_WP_URL: http://web-test
+      APP: ${APP}
       WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
       TEST_TABLE_PREFIX: ${TEST_TABLE_PREFIX}
-      TEST_SITE_WP_URL: ${TEST_SITE_WP_URL}
       TEST_SITE_WP_DOMAIN: ${TEST_SITE_WP_DOMAIN}
       TEST_SITE_ADMIN_EMAIL: ${TEST_SITE_ADMIN_EMAIL}
       TEST_SITE_WP_ADMIN_PATH: ${TEST_SITE_WP_ADMIN_PATH}
@@ -112,7 +130,7 @@ services:
     volumes:
       - ./:/var/www/html/wp-content/plugins/${APP}:cached
       - /var/www/html/wp-content/plugins/${APP}/.git
-      - wordpress-source:/var/www/html
+      - wordpress-source:/var/www/html:ro
     networks:
       - test
 

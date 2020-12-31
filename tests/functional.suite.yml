@@ -13,16 +13,16 @@ modules:
         - \Dummy\Dummy\Helper\Functional
     config:
         WPDb:
-            dsn: '%TEST_SITE_DB_DSN%'
-            user: '%TEST_SITE_DB_USER%'
-            password: '%TEST_SITE_DB_PASSWORD%'
+            dsn: 'mysql:host=%MYSQL_HOST%;dbname=%MYSQL_DATABASE%'
+            user: '%MYSQL_USER%'
+            password: '%MYSQL_PASSWORD%'
             dump: 'tests/_data/dump.sql'
             populate: true
             cleanup: true
             waitlock: 10
             url: '%TEST_SITE_WP_URL%'
             urlReplacement: true
-            tablePrefix: '%TEST_SITE_TABLE_PREFIX%'
+            tablePrefix: '%TEST_TABLE_PREFIX%'
         WPBrowser:
             url: '%TEST_SITE_WP_URL%'
             adminUsername: '%TEST_SITE_ADMIN_USERNAME%'
