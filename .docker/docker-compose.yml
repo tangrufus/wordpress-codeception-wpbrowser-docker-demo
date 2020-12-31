@@ -74,7 +74,7 @@ services:
       - workspace
 
   wordpress-test:
-    image: wordpress:${WP_VERSION}-php${PHP_VERSION}
+    image: wordpress:${WP_VERSION}-php${PHP_VERSION}-fpm-alpine
     restart: unless-stopped
     environment:
       <<: *x-wordpress-environment
