@@ -2,6 +2,7 @@ DOCKER_COMPOSE=docker-compose -f .docker/docker-compose.yml --env-file .docker/.
 
 .PHONY: dc down web wp-cli
 
+# https://stackoverflow.com/questions/2214575/passing-arguments-to-make-run
 # If the first argument is "dc"...
 ifeq (dc,$(firstword $(MAKECMDGOALS)))
   # use the rest as arguments for "dc"
