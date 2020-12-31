@@ -25,7 +25,7 @@ web:
 wp-cli:
 	${DOCKER_COMPOSE} run --rm wp-cli
 
-%-test:
+test-%:
 	${DOCKER_COMPOSE} run --rm test $*
 
 db-dump:
