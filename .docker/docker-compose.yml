@@ -1,0 +1,145 @@
+version: '3.8'
+
+x-database-environment: &x-database-environment
+  MYSQL_RANDOM_ROOT_PASSWORD: "true"
+  MYSQL_DATABASE: ${MYSQL_DATABASE}
+  MYSQL_USER: ${MYSQL_USER}
+  MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+x-wordpress-environment: &x-wordpress-environment
+  WORDPRESS_DEBUG: "true"
+  WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+  WORDPRESS_DB_USER: ${MYSQL_USER}
+  WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+
+services:
+  composer:
+    image: cimg/php:${PHP_VERSION}
+    restart: "no"
+    command: bash
+    volumes:
+      - ./:/home/circleci/project
+
+  wordpress:
+    image: wordpress:${WP_VERSION}-php${PHP_VERSION}-fpm-alpine
+    restart: unless-stopped
+    environment: &wordpress-environment
+      <<: *x-wordpress-environment
+      WORDPRESS_DB_HOST: database
+    volumes: &wordpress-volumes
+      - ./:/var/www/html/wp-content/plugins/${APP}:cached
+      - /var/www/html/wp-content/plugins/${APP}/.git
+      - wordpress:/var/www/html
+    depends_on:
+      - database
+    networks:
+      - workspace
+
+  web:
+    depends_on:
+      - database
+      - wordpress
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "${WEB_PUBLISHED_PORT}:80"
+    volumes:
+      - wordpress:/var/www/html
+      - ./.docker/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - workspace
+
+  wp-cli:
+    image: wordpress:cli-php${PHP_VERSION}
+    restart: "no"
+    command: bash
+    environment: *wordpress-environment
+    volumes: *wordpress-volumes
+    working_dir: /var/www/html/wp-content/plugins/${APP}
+    depends_on:
+      - database
+      - wordpress
+    networks:
+      - workspace
+
+  database:
+    image: mariadb:${MARIADB_VERSION}
+    restart: unless-stopped
+    environment: *x-database-environment
+    ports:
+      - "${DATABASE_PUBLISHED_PORT}:3306"
+    volumes:
+      - ./.docker/tmp/db:/var/lib/mysql:delegated
+    networks:
+      - workspace
+
+  wordpress-test:
+    image: wordpress:${WP_VERSION}-php${PHP_VERSION}
+    restart: unless-stopped
+    environment:
+      <<: *x-wordpress-environment
+      WORDPRESS_DB_HOST: database-test
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/${APP}:cached
+      - /var/www/html/wp-content/plugins/${APP}/.git
+      - wordpress-source:/var/www/html
+    depends_on:
+      - database-test
+    networks:
+      - test
+
+  test:
+    image: cimg/php:${PHP_VERSION}
+    entrypoint: vendor/bin/codecept run
+    restart: "no"
+    depends_on:
+      - wordpress-test
+      - database-test
+      - chrome
+    environment:
+      <<: *x-database-environment
+      MYSQL_HOST: database-test
+      WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
+      TEST_TABLE_PREFIX: ${TEST_TABLE_PREFIX}
+      TEST_SITE_WP_URL: ${TEST_SITE_WP_URL}
+      TEST_SITE_WP_DOMAIN: ${TEST_SITE_WP_DOMAIN}
+      TEST_SITE_ADMIN_EMAIL: ${TEST_SITE_ADMIN_EMAIL}
+      TEST_SITE_WP_ADMIN_PATH: ${TEST_SITE_WP_ADMIN_PATH}
+      TEST_SITE_ADMIN_USERNAME: ${TEST_SITE_ADMIN_USERNAME}
+      TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
+      SELENIUM_HOST: chrome
+    working_dir: /var/www/html/wp-content/plugins/${APP}
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/${APP}:cached
+      - /var/www/html/wp-content/plugins/${APP}/.git
+      - wordpress-source:/var/www/html
+    networks:
+      - test
+
+  chrome:
+    image: selenium/standalone-chrome:4
+    restart: unless-stopped
+    shm_size: '2gb'
+    networks:
+      - test
+
+  database-test:
+    image: circleci/mariadb:${MARIADB_VERSION}-ram
+    restart: unless-stopped
+    shm_size: '512mb'
+    environment: *x-database-environment
+    networks:
+      - test
+
+networks:
+  workspace:
+    name: ${APP}-workspace
+  test:
+    name: ${APP}-test
+
+volumes:
+  wordpress:
+    name: ${APP}-wordpress
+    external: true
+  wordpress-source:
+    name: ${APP}-wordpress-source
