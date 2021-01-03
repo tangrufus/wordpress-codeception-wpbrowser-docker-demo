@@ -22,11 +22,17 @@ down:
 composer:
 	${DOCKER_COMPOSE} run --rm composer
 
-web:
-	${DOCKER_COMPOSE} up --detach web
+wordpress:
+	${DOCKER_COMPOSE} up --detach wordpress
 
 wp-cli:
 	${DOCKER_COMPOSE} run --rm wp-cli
+
+test:
+	make test-unit
+	make test-wpunit
+	make test-functional
+	make test-acceptance
 
 test-%:
 	${DOCKER_COMPOSE} run --rm test $*
