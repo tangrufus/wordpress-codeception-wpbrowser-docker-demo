@@ -27,8 +27,8 @@ services:
       <<: *x-wordpress-environment
       WORDPRESS_DB_HOST: database
     volumes: &wordpress-volumes
-      - ./:/var/www/html/wp-content/plugins/${APP}:cached
-      - /var/www/html/wp-content/plugins/${APP}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress:/var/www/html
     depends_on:
       - database
@@ -47,8 +47,8 @@ services:
       - FASTCGI_HOST=wordpress
     volumes:
       - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./:/var/www/html/wp-content/plugins/${APP}:cached
-      - /var/www/html/wp-content/plugins/${APP}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress:/var/www/html
     networks:
       - workspace
@@ -59,7 +59,7 @@ services:
     command: bash
     environment: *wordpress-environment
     volumes: *wordpress-volumes
-    working_dir: /var/www/html/wp-content/plugins/${APP}
+    working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     depends_on:
       - database
       - wordpress
@@ -84,8 +84,8 @@ services:
       <<: *x-wordpress-environment
       WORDPRESS_DB_HOST: database-test
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${APP}:cached
-      - /var/www/html/wp-content/plugins/${APP}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress-source:/var/www/html
     depends_on:
       - database-test
@@ -102,8 +102,8 @@ services:
       - FASTCGI_HOST=wordpress-test
     volumes:
       - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./:/var/www/html/wp-content/plugins/${APP}:cached
-      - /var/www/html/wp-content/plugins/${APP}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress-source:/var/www/html
     networks:
       - test
@@ -123,7 +123,7 @@ services:
       SELENIUM_HOST: chrome
       SELENIUM_BROWSER: chrome
       TEST_SITE_WP_URL: http://web-test
-      APP: ${APP}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
       WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
       TEST_TABLE_PREFIX: ${TEST_TABLE_PREFIX}
       TEST_SITE_WP_DOMAIN: ${TEST_SITE_WP_DOMAIN}
@@ -131,10 +131,10 @@ services:
       TEST_SITE_WP_ADMIN_PATH: ${TEST_SITE_WP_ADMIN_PATH}
       TEST_SITE_ADMIN_USERNAME: ${TEST_SITE_ADMIN_USERNAME}
       TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
-    working_dir: /var/www/html/wp-content/plugins/${APP}
+    working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${APP}:cached
-      - /var/www/html/wp-content/plugins/${APP}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress-source:/var/www/html:ro
     networks:
       - test
@@ -156,13 +156,11 @@ services:
 
 networks:
   workspace:
-    name: ${APP}-workspace
   test:
-    name: ${APP}-test
 
 volumes:
   wordpress:
-    name: ${APP}-wordpress
+    name: ${COMPOSE_PROJECT_NAME}-wordpress
     external: true
   wordpress-source:
-    name: ${APP}-wordpress-source
+    name: ${COMPOSE_PROJECT_NAME}-wordpress-source

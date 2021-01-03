@@ -1,6 +1,6 @@
 DOCKER_COMPOSE=docker-compose -f .docker/docker-compose.yml --env-file .docker/.env --project-directory .
 
-.PHONY: dc stop down composer web wp-cli test-% db-dump
+.PHONY: dc stop down composer web wp-cli test test-% db-dump
 
 # https://stackoverflow.com/a/14061796
 # If the first argument is "dc"...
