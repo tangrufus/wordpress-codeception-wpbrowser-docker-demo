@@ -57,7 +57,7 @@ services:
     ports:
       - "${DATABASE_PUBLISHED_PORT}:3306"
     volumes:
-      - ./.docker/tmp/db:/var/lib/mysql:delegated
+      - wordpress-db:/var/lib/mysql:delegated
     networks:
       - workspace
 
@@ -127,6 +127,9 @@ networks:
 volumes:
   wordpress:
     name: ${COMPOSE_PROJECT_NAME}-wordpress
+    external: true
+  wordpress-db:
+    name: ${COMPOSE_PROJECT_NAME}-wordpress-db
     external: true
   wordpress-source:
     name: ${COMPOSE_PROJECT_NAME}-wordpress-source
