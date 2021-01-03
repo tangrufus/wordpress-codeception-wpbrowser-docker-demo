@@ -17,6 +17,6 @@ modules:
             tablePrefix: "%TEST_TABLE_PREFIX%"
             domain: "%TEST_SITE_WP_DOMAIN%"
             adminEmail: "%TEST_SITE_ADMIN_EMAIL%"
-            title: "%APP%"
-            plugins: ["%APP%/%APP%.php"]
-            activatePlugins: ["%APP%/%APP%.php"]
+            title: "%COMPOSE_PROJECT_NAME%"
+            plugins: ["%COMPOSE_PROJECT_NAME%/%COMPOSE_PROJECT_NAME%.php"]
+            activatePlugins: ["%COMPOSE_PROJECT_NAME%/%COMPOSE_PROJECT_NAME%.php"]
