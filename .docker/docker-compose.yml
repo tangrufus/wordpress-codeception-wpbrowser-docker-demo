@@ -1,6 +1,6 @@
 version: '3.8'
 
-x-database-environment: &x-database-environment
+x-db-environment: &x-db-environment
   MYSQL_RANDOM_ROOT_PASSWORD: "true"
   MYSQL_DATABASE: ${MYSQL_DATABASE}
   MYSQL_USER: ${MYSQL_USER}
@@ -21,35 +21,19 @@ services:
       - ./:/home/circleci/project
 
   wordpress:
-    image: wordpress:${WP_VERSION}-php${PHP_VERSION}-fpm-alpine
+    image: wordpress:${WP_VERSION}-php${PHP_VERSION}
     restart: unless-stopped
     environment: &wordpress-environment
       <<: *x-wordpress-environment
-      WORDPRESS_DB_HOST: database
+      WORDPRESS_DB_HOST: db
+    ports:
+      - "${WEB_PUBLISHED_PORT}:80"
     volumes: &wordpress-volumes
       - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
       - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
       - wordpress:/var/www/html
     depends_on:
-      - database
-    networks:
-      - workspace
-
-  web:
-    depends_on:
-      - database
-      - wordpress
-    image: nginx:stable-alpine
-    restart: unless-stopped
-    ports:
-      - "${WEB_PUBLISHED_PORT}:80"
-    environment:
-      - FASTCGI_HOST=wordpress
-    volumes:
-      - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
-      - wordpress:/var/www/html
+      - db
     networks:
       - workspace
 
@@ -61,50 +45,33 @@ services:
     volumes: *wordpress-volumes
     working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     depends_on:
-      - database
+      - db
       - wordpress
     networks:
       - workspace
 
-  database:
+  db:
     image: mariadb:${MARIADB_VERSION}
     restart: unless-stopped
-    environment: *x-database-environment
+    environment: *x-db-environment
     ports:
       - "${DATABASE_PUBLISHED_PORT}:3306"
     volumes:
-      - ./.docker/tmp/db:/var/lib/mysql:delegated
+      - wordpress-db:/var/lib/mysql:delegated
     networks:
       - workspace
 
   wordpress-test:
-    image: wordpress:${WP_VERSION}-php${PHP_VERSION}-fpm-alpine
+    image: wordpress:${WP_VERSION}-php${PHP_VERSION}
     restart: unless-stopped
     environment:
       <<: *x-wordpress-environment
-      WORDPRESS_DB_HOST: database-test
+      WORDPRESS_DB_HOST: db-test
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
-      - wordpress-source:/var/www/html
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
+      - wordpress-test:/var/www/html
     depends_on:
-      - database-test
-    networks:
-      - test
-
-  web-test:
-    depends_on:
-      - database-test
-      - wordpress-test
-    image: nginx:stable-alpine
-    restart: unless-stopped
-    environment:
-      - FASTCGI_HOST=wordpress-test
-    volumes:
-      - ./.docker/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
-      - wordpress-source:/var/www/html
+      - db-test
     networks:
       - test
 
@@ -113,16 +80,15 @@ services:
     entrypoint: vendor/bin/codecept run
     restart: "no"
     depends_on:
-      - web-test
       - wordpress-test
-      - database-test
+      - db-test
       - chrome
     environment:
-      <<: *x-database-environment
-      MYSQL_HOST: database-test
+      <<: *x-db-environment
+      MYSQL_HOST: db-test
       SELENIUM_HOST: chrome
       SELENIUM_BROWSER: chrome
-      TEST_SITE_WP_URL: http://web-test
+      TEST_SITE_WP_URL: http://wordpress-test
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
       WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
       TEST_TABLE_PREFIX: ${TEST_TABLE_PREFIX}
@@ -133,9 +99,8 @@ services:
       TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
     working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
-      - wordpress-source:/var/www/html:ro
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
+      - wordpress-test:/var/www/html
     networks:
       - test
 
@@ -146,11 +111,11 @@ services:
     networks:
       - test
 
-  database-test:
+  db-test:
     image: circleci/mariadb:${MARIADB_VERSION}-ram
     restart: unless-stopped
     shm_size: '512mb'
-    environment: *x-database-environment
+    environment: *x-db-environment
     networks:
       - test
 
@@ -162,5 +127,8 @@ volumes:
   wordpress:
     name: ${COMPOSE_PROJECT_NAME}-wordpress
     external: true
-  wordpress-source:
-    name: ${COMPOSE_PROJECT_NAME}-wordpress-source
+  wordpress-db:
+    name: ${COMPOSE_PROJECT_NAME}-wordpress-db
+    external: true
+  wordpress-test:
+    name: ${COMPOSE_PROJECT_NAME}-wordpress-test
