@@ -1,4 +1,5 @@
-DOCKER_COMPOSE=docker-compose -f .docker/docker-compose.yml --env-file .docker/.env --project-directory .
+COMPOSE_PROJECT_NAME=dummy
+DOCKER_COMPOSE=COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} docker-compose -f .docker/docker-compose.yml --env-file .docker/.env --project-directory .
 
 .PHONY: dc stop down composer web wp-cli test test-% db-dump
 

@@ -68,8 +68,8 @@ services:
       <<: *x-wordpress-environment
       WORDPRESS_DB_HOST: db-test
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
+      - wordpress-test:/var/www/html
     depends_on:
       - db-test
     networks:
@@ -99,9 +99,8 @@ services:
       TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
     working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}:cached
-      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
-      - wordpress-source:/var/www/html:ro
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
+      - wordpress-test:/var/www/html
     networks:
       - test
 
@@ -131,5 +130,5 @@ volumes:
   wordpress-db:
     name: ${COMPOSE_PROJECT_NAME}-wordpress-db
     external: true
-  wordpress-source:
-    name: ${COMPOSE_PROJECT_NAME}-wordpress-source
+  wordpress-test:
+    name: ${COMPOSE_PROJECT_NAME}-wordpress-test
