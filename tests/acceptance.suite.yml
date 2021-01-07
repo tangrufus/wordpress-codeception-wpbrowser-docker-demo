@@ -13,7 +13,7 @@ modules:
         - \Dummy\Dummy\Helper\Acceptance
     config:
         WPDb:
-            dsn: 'mysql:host=%MYSQL_HOST%;dbname=%MYSQL_DATABASE%'
+            dsn: 'mysql:host=%MYSQL_HOST%;port=%MYSQL_PORT%;dbname=%MYSQL_DATABASE%'
             user: '%MYSQL_USER%'
             password: '%MYSQL_PASSWORD%'
             dump: 'tests/_data/dump.sql'
@@ -31,6 +31,7 @@ modules:
             adminPassword: '%TEST_SITE_ADMIN_PASSWORD%'
             adminPath: '%TEST_SITE_WP_ADMIN_PATH%'
             host: '%SELENIUM_HOST%'
+            port: '%SELENIUM_PORT%'
             browser: '%SELENIUM_BROWSER%'
             headers:
                 X_TEST_REQUEST: 1

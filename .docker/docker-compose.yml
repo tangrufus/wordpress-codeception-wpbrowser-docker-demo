@@ -14,11 +14,14 @@ x-wordpress-environment: &x-wordpress-environment
 
 services:
   composer:
-    image: cimg/php:${PHP_VERSION}
+    build:
+      context: ./.docker
+      dockerfile: Dockerfile.composer
+      args:
+        PHP_VERSION: ${PHP_VERSION}
     restart: "no"
-    command: bash
     volumes:
-      - ./:/home/circleci/project
+      - ./:/app
 
   wordpress:
     image: wordpress:${WP_VERSION}-php${PHP_VERSION}
@@ -61,34 +64,28 @@ services:
     networks:
       - workspace
 
-  wordpress-test:
-    image: wordpress:${WP_VERSION}-php${PHP_VERSION}
-    restart: unless-stopped
-    environment:
-      <<: *x-wordpress-environment
-      WORDPRESS_DB_HOST: db-test
-    volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
-      - wordpress-test:/var/www/html
-    depends_on:
-      - db-test
-    networks:
-      - test
-
-  test:
-    image: cimg/php:${PHP_VERSION}
-    entrypoint: vendor/bin/codecept run
+  codecept:
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile.wordpress
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+        WP_VERSION: ${WP_VERSION}
     restart: "no"
     depends_on:
-      - wordpress-test
-      - db-test
+      - db-codecept
       - chrome
     environment:
       <<: *x-db-environment
-      MYSQL_HOST: db-test
+      MYSQL_HOST: db-codecept
+      MYSQL_PORT: 3306
+      <<: *x-wordpress-environment
+      WORDPRESS_DB_HOST: db-codecept
+      WORDPRESS_DB_PORT: 3306
       SELENIUM_HOST: chrome
+      SELENIUM_PORT: 4444
       SELENIUM_BROWSER: chrome
-      TEST_SITE_WP_URL: http://wordpress-test
+      TEST_SITE_WP_URL: http://codecept
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
       WP_ROOT_FOLDER: ${WP_ROOT_FOLDER}
       TEST_TABLE_PREFIX: ${TEST_TABLE_PREFIX}
@@ -97,31 +94,30 @@ services:
       TEST_SITE_WP_ADMIN_PATH: ${TEST_SITE_WP_ADMIN_PATH}
       TEST_SITE_ADMIN_USERNAME: ${TEST_SITE_ADMIN_USERNAME}
       TEST_SITE_ADMIN_PASSWORD: ${TEST_SITE_ADMIN_PASSWORD}
-    working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     volumes:
-      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
-      - wordpress-test:/var/www/html
+      - ./:/var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
+      - /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/.git
     networks:
-      - test
+      - codecept
+
+  db-codecept:
+    image: circleci/mariadb:${MARIADB_VERSION}-ram
+    restart: unless-stopped
+    shm_size: '512mb'
+    environment: *x-db-environment
+    networks:
+      - codecept
 
   chrome:
     image: selenium/standalone-chrome:4
     restart: unless-stopped
     shm_size: '2gb'
     networks:
-      - test
-
-  db-test:
-    image: circleci/mariadb:${MARIADB_VERSION}-ram
-    restart: unless-stopped
-    shm_size: '512mb'
-    environment: *x-db-environment
-    networks:
-      - test
+      - codecept
 
 networks:
   workspace:
-  test:
+  codecept:
 
 volumes:
   wordpress:
@@ -130,5 +126,3 @@ volumes:
   wordpress-db:
     name: ${COMPOSE_PROJECT_NAME}-wordpress-db
     external: true
-  wordpress-test:
-    name: ${COMPOSE_PROJECT_NAME}-wordpress-test
