@@ -134,10 +134,12 @@ codecept: vendor ##@Codeception@ Run codecept commands via docker-compose servic
 	$(docker_compose) up --detach $@
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) $@ codecept $(run_args)
 
+.PHONY: up-codecept
+up-codecept:
+	$(docker_compose) up --detach $(codecept_services)
 
 .PHONY: codecept-run
-codecept-run: vendor ##@Codeception@ Run all codecept test suites
-	$(docker_compose) up --detach codecept
+codecept-run: vendor up-codecept ##@Codeception@ Run all codecept test suites
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
@@ -146,13 +148,8 @@ codecept-run: vendor ##@Codeception@ Run all codecept test suites
 
 
 .PHONY: codecept-run
-ci: setup-composer ci-setup-codecept ##@Codeception@ Run all codecept test suites
+ci: setup-composer setup-codecept ##@Codeception@ Run all codecept test suites
 	$(MAKE) codecept-run
-
-.PHONY: ci-setup-codecept
-ci-setup-codecept: setup-codecept;
-	$(docker_compose) up --detach $(codecept_services)
-
 
 
 # https://stackoverflow.com/a/30796664
