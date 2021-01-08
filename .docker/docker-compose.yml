@@ -5,12 +5,14 @@ x-db-environment: &x-db-environment
   MYSQL_DATABASE: ${MYSQL_DATABASE}
   MYSQL_USER: ${MYSQL_USER}
   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  MYSQL_PORT: 3306
 
 x-wordpress-environment: &x-wordpress-environment
   WORDPRESS_DEBUG: "true"
   WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
   WORDPRESS_DB_USER: ${MYSQL_USER}
   WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+  WORDPRESS_DB_PORT: 3306
 
 services:
   composer:
@@ -40,13 +42,16 @@ services:
     networks:
       - workspace
 
-  wp-cli:
-    image: wordpress:cli-php${PHP_VERSION}
+  wp:
+    build:
+      context: ./.docker
+      dockerfile: Dockerfile.wp
+      args:
+        PHP_VERSION: ${PHP_VERSION}
     restart: "no"
     command: bash
     environment: *wordpress-environment
     volumes: *wordpress-volumes
-    working_dir: /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}
     depends_on:
       - db
       - wordpress
@@ -67,7 +72,7 @@ services:
   codecept:
     build:
       context: .
-      dockerfile: ./.docker/Dockerfile.wordpress
+      dockerfile: ./.docker/Dockerfile.codecept
       args:
         PHP_VERSION: ${PHP_VERSION}
         WP_VERSION: ${WP_VERSION}
@@ -78,10 +83,9 @@ services:
     environment:
       <<: *x-db-environment
       MYSQL_HOST: db-codecept
-      MYSQL_PORT: 3306
+      MYSQL_DUMP: tests/_data/dump.sql
       <<: *x-wordpress-environment
       WORDPRESS_DB_HOST: db-codecept
-      WORDPRESS_DB_PORT: 3306
       SELENIUM_HOST: chrome
       SELENIUM_PORT: 4444
       SELENIUM_BROWSER: chrome
