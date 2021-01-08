@@ -146,12 +146,8 @@ codecept-run: vendor ##@Codeception@ Run all codecept test suites
 
 
 .PHONY: codecept-run
-ci: setup-composer ci-setup-codecept vendor ##@Codeception@ Run all codecept test suites
-	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
-	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
-	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
-	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
-	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
+ci: setup-composer ci-setup-codecept ##@Codeception@ Run all codecept test suites
+	$(MAKE) codecept-run
 
 .PHONY: ci-setup-codecept
 ci-setup-codecept: setup-codecept;
