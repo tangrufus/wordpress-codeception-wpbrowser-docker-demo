@@ -22,7 +22,7 @@ services:
       args:
         PHP_VERSION: ${PHP_VERSION}
     restart: "no"
-    user: ${CURRENT_UID}
+    user: ${USER}
     volumes:
       - ./:/app
 

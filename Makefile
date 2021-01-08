@@ -2,7 +2,7 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 # macOS hasn't support GNU Make 3.82 yet
-# .SHELLFLAGS := -eu -o pipefail -c
+.SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 .DELETE_ON_ERROR:
 .SUFFIXES:
@@ -20,31 +20,50 @@ endif
 include $(env)
 export $(shell sed 's/=.*//' $(env))
 
-docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} docker-compose -f .docker/docker-compose.yml --env-file $(env) --project-directory .
+docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} USER="$(shell id -u):$(shell id -g)" docker-compose -f .docker/docker-compose.yml --env-file $(env) --project-directory .
 docker_compose_workdir_flag = --workdir /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
 
 d_volumes = d-volume-wordpress d-volume-wordpress-db
+d_networks = d-network-default d-network-workspace d-network-codecept
+composer_services = composer
+wordpress_services = wordpress wp db
+codecept_services = codecept db-codecept chrome
 
-setup: dc-pull dc-build d_volumes ##@Setup@ Start all service; Reset wordpress database from db dump
+.PHONY: init
+init: setup ci ##@Setup@ Setup and run all service; Reset wp db from db dump
 	$(MAKE) wordpress
 	$(MAKE) wp-db-import
-	$(MAKE) test
 	@printf "\n\n"
 	@printf "%0.s-" {0..48}
 	@printf "\n"
 	@printf "$(green)Success:$(reset) WordPress and test services are ready.\n"
-	@printf "$(green)Success:$(reset) Imported from '$(yellow)${MYSQL_DUMP}$(reset)'.\n"
 	@printf "$(green)Success:$(reset) All test suites passed\n"
+	@printf "$(green)Success:$(reset) Imported from '$(yellow)${MYSQL_DUMP}$(reset)'.\n"
 	@printf "$(green)Success:$(reset) Listening on $(yellow)http://localhost:${WEB_PUBLISHED_PORT}$(reset)\n"
 
+.PHONY: setup
+setup: setup-composer setup-wordpress setup-codecept ##@Setup@ Pull and build all services
+
+.PHONY: setup-composer ##@Setup@ Pull and build composer service and its dependencies
+setup-composer: d-volumes d-networks dc-pull-composer dc-build-composer;
+
+.PHONY: setup-% ##@Setup@ Pull and build certain service and its dependencies
+setup-%: d-volumes d-networks dc-pull-% dc-build-% setup-composer;
 
 .PHONY: d-volumes
-d_volumes: $(d_volumes)
-
+d-volumes: $(d_volumes) ##@Setup@ Create docker columns
 
 .PHONY: d-volume-%
 d-volume-%:
 	docker volume create --name=${COMPOSE_PROJECT_NAME}-$*
+
+.PHONY: d-networks
+d-networks: $(d_networks) ##@Setup@ Create docker columns
+
+.PHONY: d-network-%
+d-network-%:
+	docker network create ${COMPOSE_PROJECT_NAME}_$*
+
 
 .docker/.env.local: .docker/.env ##@Setup@ Generate .env.local to override environment variables
 	cp .docker/.env .docker/.env.local
@@ -55,24 +74,33 @@ runnable_targets += dc
 dc: ##@Docker Compose@ Run docker-compose commands with project configs
 	$(docker_compose) $(run_args)
 
+
 .PHONY: dc-build
-dc-build: ##@Docker Compose@ Build docker-compose services
-	$(MAKE) -- dc build --parallel
+dc-build: ##@Docker Compose@ Build images for all services
+	$(docker_compose) build --parallel
+
+.PHONY: dc-build-%
+dc-build-%: ##@Docker Compose@ Build images for specific service and its dependencies
+	$(docker_compose) build --parallel $($*_services)
 
 
 .PHONY: dc-pull
-dc-pull: ##@Docker Compose@ Pull docker-compose images
-	$(MAKE) dc pull
+dc-pull: ##@Docker Compose@ Pull images for all services
+	$(docker_compose) pull
+
+.PHONY: dc-pull-%
+dc-pull-%: ##@Docker Compose@ Pull images for specific service and its dependencies
+	$(docker_compose) pull $($*_services)
 
 
 runnable_targets += composer
 .PHONY: composer
-composer: d_volumes ##@Composer@ Run composer commands via docker-compose service
+composer: ##@Composer@ Run composer commands via docker-compose service
 	$(docker_compose) run --rm composer $(run_args)
 
 
 vendor: composer.json composer.lock ##@Composer@ Run composer install
-	$(MAKE) composer install
+	$(docker_compose) run --rm composer install
 	@touch $@
 
 
@@ -90,14 +118,14 @@ wp: vendor ##@WordPress@ Run wp cli commands on wordpress service
 
 .PHONY: wp-db-export ${MYSQL_DUMP}
 wp-db-export: ##@WordPress@ Export wordpress service database
-	$(MAKE) wp db export ${MYSQL_DUMP}
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db export ${MYSQL_DUMP}
 ${MYSQL_DUMP}:
-	$(MAKE) wp db export ${MYSQL_DUMP}
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db export ${MYSQL_DUMP}
 
 
 .PHONY: wp-db-import
 wp-db-import: ##@WordPress@ Import database dump into wordpress service
-	$(MAKE) wp db import $(MYSQL_DUMP)
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db import $(MYSQL_DUMP)
 
 
 runnable_targets += codecept
@@ -106,14 +134,32 @@ codecept: vendor ##@Codeception@ Run codecept commands via docker-compose servic
 	$(docker_compose) up --detach $@
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) $@ codecept $(run_args)
 
-
-.PHONY: test
-test: ##@Codeception@ Run all codecept test suites
-	$(MAKE) codecept run unit
-	$(MAKE) codecept run wpunit
-	$(MAKE) codecept run functional
-	$(MAKE) codecept run acceptance
+.PHONY: codecept-run
+codecept-run: vendor ##@Codeception@ Run all codecept test suites
+	$(docker_compose) up --detach $(codecept_services)
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
 	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
+
+
+.PHONY: ci-vendor
+ci-vendor: d-volumes d-networks
+	$(docker_compose) run --rm composer install
+
+.PHONY: ci-setup-%
+ci-setup-%: dc-pull-% dc-build-%;
+
+.PHONY: ci-codecept-run
+ci-codecept-run: d-volumes d-networks ci-vendor ci-setup-codecept
+	$(docker_compose) up --detach codecept
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
+	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
+
 
 
 # https://stackoverflow.com/a/30796664
