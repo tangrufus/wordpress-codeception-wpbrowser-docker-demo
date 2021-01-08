@@ -23,9 +23,9 @@ export $(shell sed 's/=.*//' $(env))
 docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} docker-compose -f .docker/docker-compose.yml --env-file $(env) --project-directory .
 docker_compose_workdir_flag = --workdir /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
 
-d_volumes = wordpress wordpress-db
+d_volumes = d-volume-wordpress d-volume-wordpress-db
 
-setup: dc-pull dc-build $(addprefix d-volume-,$(d_volumes)) ##@Setup@ Start all service; Reset wordpress database from db dump
+setup: dc-pull dc-build d_volumes ##@Setup@ Start all service; Reset wordpress database from db dump
 	$(MAKE) wordpress
 	$(MAKE) wp-db-import
 	$(MAKE) test
@@ -37,6 +37,9 @@ setup: dc-pull dc-build $(addprefix d-volume-,$(d_volumes)) ##@Setup@ Start all 
 	@printf "$(green)Success:$(reset) All test suites passed\n"
 	@printf "$(green)Success:$(reset) Listening on $(yellow)http://localhost:${WEB_PUBLISHED_PORT}$(reset)\n"
 
+
+.PHONY: d-volumes
+d_volumes: $(d_volumes)
 
 
 .PHONY: d-volume-%
@@ -64,7 +67,7 @@ dc-pull: ##@Docker Compose@ Pull docker-compose images
 
 runnable_targets += composer
 .PHONY: composer
-composer: ##@Composer@ Run composer commands via docker-compose service
+composer: d_volumes ##@Composer@ Run composer commands via docker-compose service
 	$(docker_compose) run --rm composer $(run_args)
 
 
@@ -101,7 +104,7 @@ runnable_targets += codecept
 .PHONY: codecept
 codecept: vendor ##@Codeception@ Run codecept commands via docker-compose service
 	$(docker_compose) up --detach $@
-	$(docker_compose) exec $(docker_compose_workdir_flag) $@ codecept $(run_args)
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) $@ codecept $(run_args)
 
 
 .PHONY: test
