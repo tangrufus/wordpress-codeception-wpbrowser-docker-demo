@@ -15,6 +15,7 @@ jobs:
           install-docker: false
           install-dockerize: false
           install-goss-dgoss: false
+      - setup_remote_docker
       - run: make test
 
 workflows:
