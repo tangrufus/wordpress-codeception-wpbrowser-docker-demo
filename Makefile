@@ -100,7 +100,7 @@ composer: ##@Composer@ Run composer commands via docker-compose service
 
 
 vendor: composer.json composer.lock ##@Composer@ Run composer install
-	$(docker_compose) run --rm composer composer install
+	$(docker_compose) run --rm composer install
 	@touch $@
 
 
