@@ -137,16 +137,16 @@ codecept-run: ##@Codeception@ Run all codecept test suites
 
 
 .PHONY: ci
-ci: ci-setup-composer ci-setup-codeception;
+ci: ci-setup-composer ci-setup-codecept;
 	$(MAKE) codecept-run
 
 .PHONY: ci-setup-composer
 ci-setup-composer: setup-composer;
 	$(MAKE) vendor
 
-.PHONY: ci-setup-codeception
-ci-setup-codeception: setup-codeception;
-	$(MAKE) -- dc up --detach db-codecept chrome
+.PHONY: ci-setup-codecept
+ci-setup-codecept: setup-codecept;
+	$(MAKE) -- dc up --detach $(codecept_services)
 
 
 
