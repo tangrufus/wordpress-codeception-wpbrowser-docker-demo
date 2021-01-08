@@ -23,9 +23,9 @@ export $(shell sed 's/=.*//' $(env))
 docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} docker-compose -f .docker/docker-compose.yml --env-file $(env) --project-directory .
 docker_compose_workdir_flag = --workdir /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
 
-d_volumes = wordpress wordpress-db
+d_volumes = d-volume-wordpress d-volume-wordpress-db
 
-setup: dc-pull dc-build $(addprefix d-volume-,$(d_volumes)) ##@Setup@ Start all service; Reset wordpress database from db dump
+setup: dc-pull dc-build $(d_volumes) ##@Setup@ Start all service; Reset wordpress database from db dump
 	$(MAKE) wordpress
 	$(MAKE) wp-db-import
 	$(MAKE) test
@@ -111,6 +111,10 @@ test: ##@Codeception@ Run all codecept test suites
 	$(MAKE) codecept run functional
 	$(MAKE) codecept run acceptance
 	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
+
+.PHONY: ci
+ci: $(d_volumes)
+	$(MAKE) test
 
 
 # https://stackoverflow.com/a/30796664
