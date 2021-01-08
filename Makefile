@@ -2,7 +2,7 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 # macOS hasn't support GNU Make 3.82 yet
-# .SHELLFLAGS := -eu -o pipefail -c
+.SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 .DELETE_ON_ERROR:
 .SUFFIXES:
