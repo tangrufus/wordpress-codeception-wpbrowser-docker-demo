@@ -147,21 +147,13 @@ codecept-run: vendor up-codecept ##@Codeception@ Run all codecept test suites
 	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
 
 
-.PHONY: codecept-run
-ci: setup-composer setup-codecept ##@Codeception@ Run all codecept test suites
-	$(MAKE) codecept-run
-
-
-
-
 .PHONY: ci-vendor
 ci-vendor: d-volumes d-networks
 	$(docker_compose) run --rm composer install
 
-
 .PHONY: ci-vendor
 ci-up-codecept: d-volumes d-networks
-	$(docker_compose) up --detach $(codecept_services)
+	$(docker_compose) up --detach codecept
 
 .PHONY: ci-codecept-run
 ci-codecept-run: ci-vendor ci-up-codecept
