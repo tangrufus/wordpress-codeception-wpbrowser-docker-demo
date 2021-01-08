@@ -149,7 +149,7 @@ ci-vendor: d-volumes d-networks
 	$(docker_compose) run --rm composer install
 
 .PHONY: ci-setup-%
-ci-setup-%: dc-pull-% dc-build-%
+ci-setup-%: dc-pull-% dc-build-%;
 
 .PHONY: ci-codecept-run
 ci-codecept-run: d-volumes d-networks ci-vendor ci-setup-codecept
