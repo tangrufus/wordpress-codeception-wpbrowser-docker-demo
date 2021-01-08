@@ -16,7 +16,7 @@ modules:
             dsn: 'mysql:host=%MYSQL_HOST%;port=%MYSQL_PORT%;dbname=%MYSQL_DATABASE%'
             user: '%MYSQL_USER%'
             password: '%MYSQL_PASSWORD%'
-            dump: 'tests/_data/dump.sql'
+            dump: '%MYSQL_DUMP%'
             populate: true
             cleanup: true
             waitlock: 10

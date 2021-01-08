@@ -1,0 +1,15 @@
+ARG PHP_VERSION
+
+FROM wordpress:cli-php${PHP_VERSION}
+
+RUN mkdir /home/www-data/bin && \
+    curl https://raw.githubusercontent.com/vishnubob/wait-for-it/81b1373f17855a4dc21156cfe1694c31d7d1792e/wait-for-it.sh > /home/www-data/bin/wait-for-it && \
+    chmod +x /home/www-data/bin/wait-for-it && \
+    printf '#! /usr/bin/env bash\n\
+set -euxo pipefail\n\
+wait-for-it ${WORDPRESS_DB_HOST}:${WORDPRESS_DB_PORT}\n\
+/usr/local/bin/wp $@\n' \
+    > /home/www-data/bin/wp && \
+    chmod +x /home/www-data/bin/wp
+
+ENV PATH="/home/www-data/bin:${PATH}"
