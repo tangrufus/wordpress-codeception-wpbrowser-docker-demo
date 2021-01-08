@@ -152,6 +152,24 @@ ci: setup-composer setup-codecept ##@Codeception@ Run all codecept test suites
 	$(MAKE) codecept-run
 
 
+
+
+.PHONY: up-codecept
+up-codecept:
+
+
+.PHONY: ci-codecept-run
+ci-codecept-run: d-volumes d-networks
+	$(docker_compose) run --rm composer install
+	$(docker_compose) up --detach $(codecept_services)
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
+	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
+
+
+
 # https://stackoverflow.com/a/30796664
 HELP_FUN = \
     %help; while(<>){push@{$$help{$$2//'options'}},[$$1,$$3] \
