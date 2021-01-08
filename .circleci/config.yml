@@ -1,0 +1,24 @@
+version: 2.1
+
+orbs:
+    php: circleci/docker@1
+
+jobs:
+  test:
+    docker:
+      # using custom image, see .circleci/images/primary/Dockerfile
+      - image: cimg/base:stable-20.04
+
+    steps:
+      - checkout
+      - docker/install-docker-tools:
+          install-docker: false
+          install-dockerize: false
+          install-goss-dgoss: false
+      - run: make test
+
+workflows:
+  test:
+    jobs:
+      - test:
+          name: php
