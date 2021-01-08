@@ -24,7 +24,7 @@ docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} USER="$(shell id -
 docker_compose_workdir_flag = --workdir /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
 
 d_volumes = d-volume-wordpress d-volume-wordpress-db
-d_networks = d-network-workspace d-network-codecept
+d_networks = d-network-default d-network-workspace d-network-codecept
 composer_services = composer
 wordpress_services = wordpress wp db
 codecept_services = codecept db-codecept chrome
