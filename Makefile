@@ -158,9 +158,13 @@ ci: setup-composer setup-codecept ##@Codeception@ Run all codecept test suites
 ci-vendor: d-volumes d-networks
 	$(docker_compose) run --rm composer install
 
-.PHONY: ci-codecept-run
-ci-codecept-run: d-volumes d-networks ci-vendor
+
+.PHONY: ci-vendor
+ci-up-codecept: d-volumes d-networks
 	$(docker_compose) up --detach $(codecept_services)
+
+.PHONY: ci-codecept-run
+ci-codecept-run: ci-vendor ci-up-codecept
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
 	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
