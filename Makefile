@@ -77,20 +77,20 @@ dc: ##@Docker Compose@ Run docker-compose commands with project configs
 
 .PHONY: dc-build
 dc-build: ##@Docker Compose@ Build images for all services
-	$(docker_compose) dc build --parallel
+	$(docker_compose) build --parallel
 
 .PHONY: dc-build-%
 dc-build-%: ##@Docker Compose@ Build images for specific service and its dependencies
-	$(docker_compose) dc build --parallel $($*_services)
+	$(docker_compose) build --parallel $($*_services)
 
 
 .PHONY: dc-pull
 dc-pull: ##@Docker Compose@ Pull images for all services
-	$(docker_compose) dc pull
+	$(docker_compose) pull
 
 .PHONY: dc-pull-%
 dc-pull-%: ##@Docker Compose@ Pull images for specific service and its dependencies
-	$(docker_compose) dc pull $($*_services)
+	$(docker_compose) pull $($*_services)
 
 
 runnable_targets += composer
@@ -155,7 +155,7 @@ ci: setup-composer ci-setup-codecept vendor ##@Codeception@ Run all codecept tes
 
 .PHONY: ci-setup-codecept
 ci-setup-codecept: setup-codecept;
-	$(docker_compose) dc up --detach $(codecept_services)
+	$(docker_compose) up --detach $(codecept_services)
 
 
 
