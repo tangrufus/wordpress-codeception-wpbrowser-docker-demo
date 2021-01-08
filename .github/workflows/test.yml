@@ -16,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run tests
-      run: make -j ci
+      run: make -j -O ci
     - uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:

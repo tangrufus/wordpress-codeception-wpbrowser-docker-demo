@@ -48,7 +48,7 @@ setup: setup-composer setup-wordpress setup-codecept ##@Setup@ Pull and build al
 setup-composer: d-volumes d-networks dc-pull-composer dc-build-composer;
 
 .PHONY: setup-% ##@Setup@ Pull and build certain service and its dependencies
-setup-%: d-volumes dc-pull-% dc-build-% setup-composer;
+setup-%: d-volumes d-networks dc-pull-% dc-build-% setup-composer;
 
 .PHONY: d-volumes
 d-volumes: $(d_volumes) ##@Setup@ Create docker columns
@@ -77,20 +77,20 @@ dc: ##@Docker Compose@ Run docker-compose commands with project configs
 
 .PHONY: dc-build
 dc-build: ##@Docker Compose@ Build images for all services
-	$(MAKE) -- dc build --parallel
+	$(docker_compose) dc build --parallel
 
 .PHONY: dc-build-%
 dc-build-%: ##@Docker Compose@ Build images for specific service and its dependencies
-	$(MAKE) -- dc build --parallel $($*_services)
+	$(docker_compose) dc build --parallel $($*_services)
 
 
 .PHONY: dc-pull
 dc-pull: ##@Docker Compose@ Pull images for all services
-	$(MAKE) dc pull
+	$(docker_compose) dc pull
 
 .PHONY: dc-pull-%
 dc-pull-%: ##@Docker Compose@ Pull images for specific service and its dependencies
-	$(MAKE) dc pull $($*_services)
+	$(docker_compose) dc pull $($*_services)
 
 
 runnable_targets += composer
@@ -100,7 +100,7 @@ composer: ##@Composer@ Run composer commands via docker-compose service
 
 
 vendor: composer.json composer.lock ##@Composer@ Run composer install
-	$(MAKE) composer install
+	$(docker_compose) run --rm composer composer install
 	@touch $@
 
 
@@ -118,14 +118,14 @@ wp: vendor ##@WordPress@ Run wp cli commands on wordpress service
 
 .PHONY: wp-db-export ${MYSQL_DUMP}
 wp-db-export: ##@WordPress@ Export wordpress service database
-	$(MAKE) wp db export ${MYSQL_DUMP}
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db export ${MYSQL_DUMP}
 ${MYSQL_DUMP}:
-	$(MAKE) wp db export ${MYSQL_DUMP}
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db export ${MYSQL_DUMP}
 
 
 .PHONY: wp-db-import
 wp-db-import: ##@WordPress@ Import database dump into wordpress service
-	$(MAKE) wp db import $(MYSQL_DUMP)
+	$(docker_compose) run --rm $(docker_compose_workdir_flag) $@ wp wp db import $(MYSQL_DUMP)
 
 
 runnable_targets += codecept
@@ -136,25 +136,26 @@ codecept: vendor ##@Codeception@ Run codecept commands via docker-compose servic
 
 
 .PHONY: codecept-run
-codecept-run: ##@Codeception@ Run all codecept test suites
-	$(MAKE) codecept run unit
-	$(MAKE) codecept run wpunit
-	$(MAKE) codecept run functional
-	$(MAKE) codecept run acceptance
+codecept-run: vendor ##@Codeception@ Run all codecept test suites
+	$(docker_compose) up --detach codecept
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
 	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
 
 
-.PHONY: ci
-ci: ci-setup-composer ci-setup-codecept;
-	$(MAKE) codecept-run
-
-.PHONY: ci-setup-composer
-ci-setup-composer: setup-composer;
-	$(MAKE) vendor
+.PHONY: codecept-run
+ci: setup-composer ci-setup-codecept vendor ##@Codeception@ Run all codecept test suites
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run unit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run wpunit
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run functional
+	$(docker_compose) exec -T $(docker_compose_workdir_flag) codecept codecept run acceptance
+	@printf "\n\n$(green)Success:$(reset) All test suites passed\n"
 
 .PHONY: ci-setup-codecept
 ci-setup-codecept: setup-codecept;
-	$(MAKE) -- dc up --detach $(codecept_services)
+	$(docker_compose) dc up --detach $(codecept_services)
 
 
 
