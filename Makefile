@@ -24,6 +24,7 @@ docker_compose = COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME} USER="$(shell id -
 docker_compose_workdir_flag = --workdir /var/www/html/wp-content/plugins/${COMPOSE_PROJECT_NAME}/
 
 d_volumes = d-volume-wordpress d-volume-wordpress-db
+d_networks = d-network-workspace d-network-codecept
 composer_services = composer
 wordpress_services = wordpress wp db
 codecept_services = codecept db-codecept chrome
@@ -44,17 +45,24 @@ init: setup ci ##@Setup@ Setup and run all service; Reset wp db from db dump
 setup: setup-composer setup-wordpress setup-codecept ##@Setup@ Pull and build all services
 
 .PHONY: setup-composer ##@Setup@ Pull and build composer service and its dependencies
-setup-composer: d_volumes dc-pull-composer dc-build-composer;
+setup-composer: d-volumes dc-pull-composer dc-build-composer;
 
 .PHONY: setup-% ##@Setup@ Pull and build certain service and its dependencies
-setup-%: d_volumes dc-pull-% dc-build-% setup-composer;
+setup-%: d-volumes dc-pull-% dc-build-% setup-composer;
 
 .PHONY: d-volumes
-d_volumes: $(d_volumes) ##@Setup@ Create docker columns
+d-volumes: $(d_volumes) ##@Setup@ Create docker columns
 
 .PHONY: d-volume-%
 d-volume-%:
 	docker volume create --name=${COMPOSE_PROJECT_NAME}-$*
+
+.PHONY: d-networks
+d_networks: $(d_networks) ##@Setup@ Create docker columns
+
+.PHONY: d-network-%
+d-network-%:
+	docker network create ${COMPOSE_PROJECT_NAME}_$*
 
 
 .docker/.env.local: .docker/.env ##@Setup@ Generate .env.local to override environment variables
