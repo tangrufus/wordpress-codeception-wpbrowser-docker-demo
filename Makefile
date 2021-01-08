@@ -45,7 +45,7 @@ init: setup ci ##@Setup@ Setup and run all service; Reset wp db from db dump
 setup: setup-composer setup-wordpress setup-codecept ##@Setup@ Pull and build all services
 
 .PHONY: setup-composer ##@Setup@ Pull and build composer service and its dependencies
-setup-composer: d-volumes dc-pull-composer dc-build-composer;
+setup-composer: d-volumes d-networks dc-pull-composer dc-build-composer;
 
 .PHONY: setup-% ##@Setup@ Pull and build certain service and its dependencies
 setup-%: d-volumes dc-pull-% dc-build-% setup-composer;
@@ -58,7 +58,7 @@ d-volume-%:
 	docker volume create --name=${COMPOSE_PROJECT_NAME}-$*
 
 .PHONY: d-networks
-d_networks: $(d_networks) ##@Setup@ Create docker columns
+d-networks: $(d_networks) ##@Setup@ Create docker columns
 
 .PHONY: d-network-%
 d-network-%:
