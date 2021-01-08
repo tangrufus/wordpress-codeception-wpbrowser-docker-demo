@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-    php: circleci/docker@1
+  docker: circleci/docker@1
 
 jobs:
   test:
